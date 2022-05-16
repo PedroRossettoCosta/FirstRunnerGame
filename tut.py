@@ -1,6 +1,7 @@
 
 import pygame 
 from sys import exit
+from random import randint
 
 def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
@@ -8,7 +9,21 @@ def display_score():
     score_rect = score_surf.get_rect(center = (319,60))
     screen.blit(score_surf,score_rect)
     return current_time
+def obstacle_movement(obstacle_list):
+    if obstacle_list:
+        for obstacle_rect in obstacle_list:
+            obstacle_rect.x -= 5
 
+            if obstacle_rect.bottom == 450:
+                screen.blit(enemy_surf,obstacle_rect)
+            else:
+                screen.blit(bat_surf,obstacle_rect)
+
+
+        obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
+
+        return obstacle_list
+    else: return []
 pygame.init()
 #screen = pygame.display.set_mode((width, height))
 
@@ -31,8 +46,14 @@ ground_surface = pygame.image.load('graphics/ground.png').convert()
                         #.render gives (text, AA(smooth edges or not),color)
 #score_rect = score_surf.get_rect(center = (319,60))
 
+#obstacles
 enemy_surf = pygame.image.load('graphics/enemies/enemy2.png').convert_alpha()
-enemy_rect = enemy_surf.get_rect(bottomright = (550, 450))
+enemy_surf = pygame.transform.rotozoom(enemy_surf,0,0.90)
+
+bat_surf = pygame.image.load('graphics/enemies2/bat1.png').convert_alpha()
+bat_surf = pygame.transform.rotozoom(bat_surf,0,0.75)
+
+obstacle_rect_list = []
 
 player_surf = pygame.image.load('graphics/player/playerwalk2.png').convert_alpha()
 player_rect = player_surf.get_rect(midbottom = (80,450))
@@ -61,6 +82,10 @@ start_rect = start_surf.get_rect(center = (319,540))
 #to go down increase y
 '''test_surface.fill('gold')'''
       # above is the color to make the surface, but not needed if there is a sprite(i think)1
+#TIMER
+obstacle_timer = pygame.USEREVENT + 1
+pygame.time.set_timer(obstacle_timer, 1500)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -81,15 +106,20 @@ while True:
                 #button press -> mouse pos/collision -> jump = more efficient(checking collision on every frame would be wasteful)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and player_rect.bottom >= 450:
-                    player_gravity = -25
+                    player_gravity = -20
     # this else represents is the game_active is not true anymore
         else:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     game_active = True
-                    enemy_rect.left = 550
+                    
                     start_time = int(pygame.time.get_ticks() / 1000)
-
+        if event.type == obstacle_timer and game_active:
+            if randint(0,2):
+                obstacle_rect_list.append(enemy_surf.get_rect(bottomleft = (randint(700,1100), 450)))
+                                    #.append adds to the end of the list
+            else:
+                obstacle_rect_list.append(bat_surf.get_rect(bottomleft = (randint(700,1100), 355)))
     if game_active:
         screen.blit(sky_surface,(0,0))
         screen.blit(ground_surface,(0,450))
@@ -100,9 +130,9 @@ while True:
                     #color: rgb_color = (red,green,blue)  hex_color = #rrggbb
         score = display_score()
         
-        enemy_rect.x -= 10
-        if enemy_rect.right <= 0: enemy_rect.left = 638
-        screen.blit(enemy_surf,enemy_rect)
+        #      enemy_rect.x -= 7
+        #      if enemy_rect.right <= 0: enemy_rect.left = 638
+        #      screen.blit(enemy_surf,enemy_rect)
         
         
         #Player
@@ -111,8 +141,11 @@ while True:
         if player_rect.bottom >= 450: player_rect.bottom = 450
         screen.blit(player_surf, player_rect)
             #screen.blit = coordinates of surface to display on the screenn
-        if enemy_rect.colliderect(player_rect):
-            game_active = False
+
+            #Obstacle movement
+        obstacle_rect_list = obstacle_movement(obstacle_rect_list)
+        #if enemy_rect.colliderect(player_rect):
+            #game_active = False
 # this next else is sort of the intro screen when the things above up to the if statement is the game 
     else:
         screen.fill((120,50,5))
