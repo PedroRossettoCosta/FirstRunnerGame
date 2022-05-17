@@ -19,11 +19,29 @@ def obstacle_movement(obstacle_list):
             else:
                 screen.blit(bat_surf,obstacle_rect)
 
-
         obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
 
         return obstacle_list
     else: return []
+def collisions(player,obstacles):
+    if obstacles:
+        for obstacle_rect in obstacles:
+            if player.colliderect(obstacle_rect): return False
+    return True
+def player_animation():
+    global player_surf, player_index
+
+    if player_rect.bottom < 450:
+        player_surf = player_jump_3
+
+        #jump
+    else:
+        #walk
+        player_index += 0.125
+        if player_index >= len(player_walk):player_index = 0
+        player_surf = player_walk[int(player_index)]
+    # play walking animation if the player is on floor
+    #display the jump surface when player is not on floor
 pygame.init()
 #screen = pygame.display.set_mode((width, height))
 
@@ -51,11 +69,29 @@ enemy_surf = pygame.image.load('graphics/enemies/enemy2.png').convert_alpha()
 enemy_surf = pygame.transform.rotozoom(enemy_surf,0,0.90)
 
 bat_surf = pygame.image.load('graphics/enemies2/bat1.png').convert_alpha()
-bat_surf = pygame.transform.rotozoom(bat_surf,0,0.75)
+bat_surf = pygame.transform.rotozoom(bat_surf,0,0.60)
 
 obstacle_rect_list = []
 
-player_surf = pygame.image.load('graphics/player/playerwalk2.png').convert_alpha()
+player_walk_1 = pygame.image.load('graphics/player/playerwalk1.png').convert_alpha()
+player_walk_1 = pygame.transform.rotozoom(player_walk_1,0,1.3)
+player_walk_2 = pygame.image.load('graphics/player/playerwalk2.png').convert_alpha()
+player_walk_3 = pygame.image.load('graphics/player/playerwalk3.png').convert_alpha()
+player_walk_4 = pygame.image.load('graphics/player/playerwalk4.png').convert_alpha()
+player_walk_5 = pygame.image.load('graphics/player/playerwalk5.png').convert_alpha()
+player_walk = [player_walk_1,player_walk_2,player_walk_3,player_walk_4,player_walk_5]
+player_index = 0
+player_jump_1 = pygame.image.load('graphics/player/playerjump1.png').convert_alpha()
+player_jump_2 = pygame.image.load('graphics/player/playerjump2.png').convert_alpha()
+player_jump_3 = pygame.image.load('graphics/player/playerjump3.png').convert_alpha()
+player_jump_4 = pygame.image.load('graphics/player/playerjump4.png').convert_alpha()
+player_jump_5 = pygame.image.load('graphics/player/playerjump5.png').convert_alpha()
+player_jump = [player_jump_1,player_jump_2,player_jump_3,player_jump_4,player_jump_5]
+player_jump_index = 0 
+
+player_jump_surf = player_jump[player_jump_index]
+player_jump_rect = player_jump_surf.get_rect()
+player_surf = player_walk[player_index]
 player_rect = player_surf.get_rect(midbottom = (80,450))
                         #get_rect- takes surface and draws rectangle around it, and allows you to choose specific points of the rectangle and give it coordinates
 player_gravity = 0
@@ -106,7 +142,9 @@ while True:
                 #button press -> mouse pos/collision -> jump = more efficient(checking collision on every frame would be wasteful)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and player_rect.bottom >= 450:
-                    player_gravity = -20
+                    player_gravity = -25
+                elif event.key == pygame.K_s and player_rect.bottom >= 450:
+                    player_surf = player_jump_3
     # this else represents is the game_active is not true anymore
         else:
             if event.type == pygame.KEYDOWN:
@@ -139,11 +177,16 @@ while True:
         player_gravity += 1
         player_rect.bottom += player_gravity
         if player_rect.bottom >= 450: player_rect.bottom = 450
+        player_animation()
+
         screen.blit(player_surf, player_rect)
             #screen.blit = coordinates of surface to display on the screenn
 
             #Obstacle movement
         obstacle_rect_list = obstacle_movement(obstacle_rect_list)
+
+        #collsion
+        game_active = collisions(player_rect,obstacle_rect_list)
         #if enemy_rect.colliderect(player_rect):
             #game_active = False
 # this next else is sort of the intro screen when the things above up to the if statement is the game 
@@ -153,6 +196,9 @@ while True:
         screen.blit(title_surf,title_rect)
         score_message = text_font.render(f'Your Score: {score}',False,('Black'))
         score_rect =score_message.get_rect(center = (319,120))
+        obstacle_rect_list.clear()
+        
+        player_gravity = 0
         
         if score == 0:
             screen.blit(start_surf,start_rect)
